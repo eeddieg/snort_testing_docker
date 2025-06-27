@@ -1,0 +1,9 @@
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg:"Data Exfiltration via TCP";
+    flow:established;
+    stream_size:>50000000, to_server;
+    detection_filter: track by_dst, count 1, seconds 30;
+    metadata: attack_category data_exfiltration;
+    priority:1;
+    sid:41008; rev:1;
+)

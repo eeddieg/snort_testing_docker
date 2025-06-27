@@ -1,0 +1,37 @@
+services:
+  snort:
+    image: custom-snort
+    build: 
+      context: .
+      dockerfile: builds/Dockerfile.snort3.modified
+    container_name: snort3-container
+    network_mode: "host"          # For Linux host network sniffing
+    volumes:
+      # - ./snort.lua:/usr/local/snort/etc/snort/snort.lua:ro
+      # - ./openappid:/usr/local/snort/etc/snort/appid:ro
+      - ./snort_defaults.lua:/usr/local/snort/etc/snort/snort_defaults.lua:ro
+    command:
+      - "-c"
+      - "snort.lua"
+      - "-v"
+      - "-d"
+      - "-i"
+      - "ens33"
+      # Logger must be enabled in snort.lua
+      # Only one at a time, either alert_json or alert_fast
+      # the latest in order will prevail
+      - "-A"
+      - "alert_json"
+      # - "alert_fast" 
+      - "--daq"
+      - "pcap"
+      # - "afpacket"
+      # - "--daq-var"
+      # - "version=1"
+    cap_add:
+    - NET_ADMIN
+    - NET_RAW
+    privileged: true
+    tty: true
+    stdin_open: true
+    restart: unless-stopped

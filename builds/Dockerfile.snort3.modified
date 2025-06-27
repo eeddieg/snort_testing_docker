@@ -1,0 +1,166 @@
+
+FROM ubuntu:latest
+
+# Prevent interactive tzdata config
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required dependencies
+RUN apt update && apt upgrade -y && \
+    apt install -y \
+      build-essential cmake libpcap-dev libpcre3-dev libdumbnet-dev iproute2 \
+      tshark tcpdump bison flex zlib1g-dev liblzma-dev openssl libssl-dev pkg-config \
+      libhwloc-dev libc++-dev libc++abi-dev git autotools-dev libtool \
+      libffi-dev python3-pip libluajit-5.1-dev libpcre2-dev nano \
+      ragel libboost-dev libboost-system-dev libboost-filesystem-dev  \
+      curl tzdata && \
+    ln -fs /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata
+
+# Install Hyperscan
+RUN git clone https://github.com/intel/hyperscan.git && \
+    cd hyperscan && mkdir build && cd build && \
+    cmake .. && make -j$(nproc) && make install && \
+    cd ../.. && rm -rf hyperscan
+
+# Install libdaq
+RUN git clone https://github.com/snort3/libdaq.git && \
+    cd libdaq && ./bootstrap && ./configure && \
+    make -j$(nproc) && make install && \
+    cd .. && rm -rf libdaq
+
+# Install Snort 3
+RUN git clone https://github.com/snort3/snort3.git && \
+    cd snort3 && ./configure_cmake.sh --prefix=/usr/local/snort && \
+    cd build && make -j$(nproc) && make install && \
+    cd ../.. && rm -rf snort3
+
+# Update shared libraries and set PATH
+RUN ldconfig
+
+# Fixxed PATH variable
+ENV PATH="/usr/local/snort/bin:${PATH}"
+
+RUN mkdir /snort-docker
+RUN mkdir /snort-docker/network-rules/
+
+COPY network-rules /snort-docker/network-rules/
+
+COPY snort.lua /usr/local/snort/etc/snort/snort.lua
+RUN mkdir -p /snort-docker/logs && chmod 777 /snort-docker/logs
+
+# OpenAppID added
+RUN mkdir  /usr/local/snort/etc/snort/appid
+
+COPY openappid  /usr/local/snort/etc/snort/appid
+
+# CMD ["sleep", "infinity"]
+
+WORKDIR /usr/local/snort/etc/snort/
+
+ENTRYPOINT ["snort", \
+  "-l", "/snort-docker/logs", \
+  "--lua", "alert_json = {file = true , fields = 'timestamp sid gid dst_port src_port pkt_num priority pkt_gen pkt_len dir src_ap dst_ap rule action msg class'}"]
+
+# ENTRYPOINT ["/usr/local/snort/bin/snort", \
+#  "-c", "/usr/local/snort/etc/snort/snort.lua", \
+#  "-i", "ens18", \
+#  "-A", "alert_json", \
+#  "-l", "/snort-docker/logs", \
+#  "--lua", "alert_json = {file = true , fields = 'timestamp sid gid dst_port src_port pkt_num priority pkt_gen pkt_len dir src_ap dst_ap rule action msg class'}"]
+
+
+
+# /usr/local/snort/bin/snort -c /usr/local/snort/etc/snort/snort.lua -i ens18 -A alert_json -l /snort-docker/logs --lua "alert_json = {file = true , fields = 'timestamp sid gid  dst_port src_port pkt_num priority  pkt_gen pkt_len dir src_ap dst_ap rule action msg class'}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# FROM ubuntu:latest
+
+# # Prevent interactive tzdata config
+# ENV DEBIAN_FRONTEND=noninteractive
+
+# # Install required dependencies
+# RUN apt update && apt upgrade -y && \
+#     apt install -y \
+#       build-essential cmake libpcap-dev libpcre3-dev libdumbnet-dev iproute2 \
+#       tshark tcpdump bison flex zlib1g-dev liblzma-dev openssl libssl-dev pkg-config \
+#       libhwloc-dev libc++-dev libc++abi-dev git autotools-dev libtool \
+#       libffi-dev python3-pip libluajit-5.1-dev libpcre2-dev nano \
+#       ragel libboost-dev libboost-system-dev libboost-filesystem-dev  \
+#       curl tzdata && \
+#     ln -fs /usr/share/zoneinfo/Europe/Berlin /etc/localtime && \
+#     dpkg-reconfigure --frontend noninteractive tzdata
+
+# # Install Hyperscan
+# RUN git clone https://github.com/intel/hyperscan.git && \
+#     cd hyperscan && mkdir build && cd build && \
+#     cmake .. && make -j$(nproc) && make install && \
+#     cd ../.. && rm -rf hyperscan
+
+# # Install libdaq
+# RUN git clone https://github.com/snort3/libdaq.git && \
+#     cd libdaq && ./bootstrap && ./configure && \
+#     make -j$(nproc) && make install && \
+#     cd .. && rm -rf libdaq
+
+# # Install Snort 3
+# RUN git clone https://github.com/snort3/snort3.git && \
+#     cd snort3 && ./configure_cmake.sh --prefix=/usr/local/snort && \
+#     cd build && make -j$(nproc) && make install && \
+#     cd ../.. && rm -rf snort3
+
+# # Update shared libraries and set PATH
+# RUN ldconfig
+# ENV PATH="/usr/local/snort/bin:${PATH}"
+   
+# RUN mkdir /snort-docker
+# RUN mkdir /snort-docker/network-rules/
+# RUN mkdir /snort-docker/appid
+
+# COPY network-rules /snort-docker/network-rules/
+# COPY openappid /snort-docker/appid/
+
+# COPY snort.lua /usr/local/snort/etc/snort/snort.lua
+# RUN mkdir -p /snort-docker/logs && chmod 777 /snort-docker/logs
+
+# # CMD ["sleep", "infinity"]
+
+# WORKDIR /usr/local/snort/etc/snort
+# ENTRYPOINT ["snort"]
+
+# # ENTRYPOINT ["/usr/local/snort/bin/snort", \
+# #  "-c", "/usr/local/snort/etc/snort/snort.lua", \
+# #  "-i", "ens18", \
+# #  "-A", "alert_json", \
+# #  "-l", "/snort-docker/logs", \
+# #  "--lua", "alert_json = {file = true , fields = 'timestamp sid gid dst_port src_port pkt_num priority pkt_gen pkt_len dir src_ap dst_ap rule action msg class'}"]
+
+
+
+# # /usr/local/snort/bin/snort -c /usr/local/snort/etc/snort/snort.lua -i ens18 -A alert_json -l /snort-docker/logs --lua "alert_json = {file = true , fields = 'timestamp sid gid  dst_port src_port pkt_num priority  pkt_gen pkt_len dir src_ap dst_ap rule action msg class'}"

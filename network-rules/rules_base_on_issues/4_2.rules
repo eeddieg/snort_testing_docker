@@ -1,0 +1,8 @@
+alert udp $HOME_NET any -> !$HOME_NET 53 (
+    msg:"Data Exfiltration via DNS Tunneling - Large Query or High Frequency"; \
+    flow:to_server; 
+    detection_filter:track by_src, count 50, seconds 60; 
+    metadata:service dns, attack_category data_exfiltration, mitre_attack T1048, mitre_attack T1071.001; 
+    priority:1; 
+    sid:42003; rev:1; 
+)

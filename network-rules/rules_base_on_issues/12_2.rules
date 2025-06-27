@@ -1,0 +1,48 @@
+## Original 12.2 rule
+#alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+#    msg:"Unexpected large Network Traffic from an endpoint";
+#    flow:established;
+#    stream_size:>1000000000, to_server;
+#    detection_filter: track by_dst, count 1, seconds 600;
+#    metadata: attack_category data_exfiltration;
+#    priority:1;
+#    sid:122001; rev:1;
+#)
+
+# New 12.2 rules
+# 
+# TEST external 
+#       nc -l -p 12345 > output.bin
+#      In VM run:
+#       dd if=/dev/zero bs=30M count=1 | nc 12345
+#
+
+# Moderate data transfer (>10MB)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg:"[T1] Moderate data transfer (>10MB) from external host";
+    flow:established;
+    stream_size:>10000000, to_server;
+    metadata: attack_category data_exfiltration;
+    priority:3;
+    sid:122101; rev:1;
+)
+
+# Large data transfer (>100MB)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg:"[T2] Large data transfer (>100MB) from external host";
+    flow:established;
+    stream_size:>100000000, to_server;
+    metadata: attack_category data_exfiltration;
+    priority:2;
+    sid:122102; rev:1;
+)
+
+# Massive data transfer (>1GB)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+    msg:"[T3] Massive data transfer (>1GB) from external host";
+    flow:established;
+    stream_size:>1000000000, to_server;
+    metadata: attack_category data_exfiltration;
+    priority:1;
+    sid:122103; rev:1;
+)

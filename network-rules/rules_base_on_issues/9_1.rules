@@ -1,0 +1,205 @@
+#alert ip any any -> $HOME_NET any ( 
+#    msg:"DDoS Detection: Abnormal inbound traffic spike detected";  
+#    flow:to_server;  
+#    metadata:service any, priority high, severity critical, category "Availability";  
+#    sid:910001; rev:2;  
+#    classtype:attempted-dos;
+#)
+
+# Abnormal TCP inbound spikes
+# Tested against TCP flag flood attacks 
+# TEST: hping3 -S -p 80 --flood <SNORT_IP>
+# TEST: hping3 -S -p 80 -f --flood <SNORT_IP>
+# TEST: hping3 -S -p 80 --flood --rand-source <SNORT_IP>
+alert tcp any any -> $HOME_NET any (
+    msg:"Abnormal TCP spike: High inbound TCP connection rate"; 
+    flow:to_server; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910002;
+    rev:1;
+)
+
+# UDP Floods
+# TEST: hping3 --udp -p ++1 --flood <SNORT_IP>
+alert udp any any -> $HOME_NET any (
+    msg:"DDoS Detection: Possible UDP Flood"; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910003;
+    rev:1;
+)
+
+# DNS queries flood
+# TEST: hping3 --udp -p 53 --flood <SNORT_IP>
+alert udp any any -> $HOME_NET 53 (
+    msg:"Abnormal spike: High volume of inbound DNS queries"; 
+    classtype:attempted-recon; 
+    sid:910004;
+    rev:1;
+)
+
+# ICMP Echo Flood
+# TEST: hping3 --icmp --flood <SNORT_IP>
+alert icmp any any -> $HOME_NET any (
+    msg:"Abnormal ICMP spike: Possible ping flood"; 
+    itype:8; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910005;
+    rev:1;
+)
+
+# SMTP Flood 
+# TEST: sudo hping3 -S -p 25 --flood <target-IP>
+alert tcp any any -> $HOME_NET 25 (
+    msg:"Abnormal SMTP spike: Potential mail flood or abuse"; 
+    flow:to_server; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910006;
+    rev:1;
+)
+
+
+# SYN Flood Detection
+# Attackers may send SYN packets in large volumes to confuse or crash services.
+# TEST: sudo hping3 -S -p 80 --flood <SNORT_IP>
+alert tcp any any -> $HOME_NET any (
+    msg:"DDoS Detection: Possible SYN Flood"; 
+    flags:S; 
+    detection_filter:track by_dst, count 3000, seconds 60; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910007; 
+    rev:1;
+)
+
+# SYN-ACK Flood Detection
+# Attackers may send SYN-ACK packets in large volumes to confuse or crash services.
+# TEST: sudo hping3 -SA -p 80 --flood <SNORT_IP>
+alert tcp any any -> $HOME_NET any (
+    msg:"DDoS Detection: Possible SYN-ACK Flood"; 
+    flags:SA; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910008; 
+    rev:1;
+)
+
+# RST Flood Detection
+# Used to tear down connections rapidly or as part of evasion.
+# TEST: sudo hping3 -R -p 80 --flood <SNORT_IP>
+alert tcp any any -> $HOME_NET any (
+    msg:"DDoS Detection: Possible TCP RST Flood"; 
+    flags:R; 
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability"; 
+    sid:910009; 
+    rev:1;
+)
+
+# TCP ACK Flood
+# Bypass simple stateless firewalls or overwhelm stateful ones
+# TEST: sudo hping3 -A -p 80 --flood <SNORT_IP>
+alert tcp any any -> $HOME_NET any (
+    msg:"DDoS Detection: Possible TCP ACK Flood";
+    flags:A;
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";
+    sid:910010;
+    rev:1;
+)
+
+# ICMP Unreachable and TTL-exceeded (Type 3/11) Flood
+# DDoS reflection or teardown attempts
+# TEST: sudo hping3 --icmp -C 3 -K 0 --flood <SNORT_IP>
+# TEST: sudo hping3 --icmp -C 11 -K 0 --flood <SNORT_IP>
+alert icmp any any -> $HOME_NET any (
+    msg:"DDoS Detection: ICMP unreachable/TTL-exceeded flood";
+    itype:3;
+    itype:11;
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";
+    sid:910011;
+    rev:1;
+)
+
+# NTP Amplification  (UDP port 123)
+# NTP monlist response flood
+# TEST: sudo hping3 --udp -p 123 -d 48 --flood <SNORT_IP>
+# TEST: sudo hping3 --udp -p 123 -a SPOOFED_IP --data 48 --flood <SNORT_IP>
+alert udp any 123 -> $HOME_NET any (
+    msg:"DDoS Detection: Possible NTP Amplification Attack";
+    content:"|17 00 03 2a|";  # NTP monlist response signature (basic)
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";
+    sid:910012;
+    rev:1;
+)
+
+
+# SSDP Amplification (UDP port 1900)
+# Flood UDP packets to port 1900
+# TEST: sudo hping3 --udp -p 1900 --flood <SNORT_IP>
+alert udp any 1900 -> $HOME_NET any (
+    msg:"DDoS Detection: Possible SSDP Amplification Response";
+    content:"HTTP/1.1 200 OK";
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";
+    sid:910013;
+    rev:1;
+)
+
+# CHARGEN Reflection (UDP port 19)
+# Flood UDP packets to port 19 
+# TEST: sudo hping3 --udp -p 19 --flood <SNORT_IP>
+alert udp any 19 -> $HOME_NET any (
+    msg:"DDoS Detection: Possible CHARGEN Reflection Attack";
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";
+    sid:910014;
+    rev:1;
+)
+
+# Unsolicited UDP Reflection (High port)
+# Flood UDP packets to high ports
+# TEST: sudo hping3 --udp -p 1024 --flood <SNORT_IP>
+alert udp any any -> $HOME_NET 1024:65535 (
+    msg:"DDoS Detection: Unsolicited inbound UDP (possible reflection)";
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";
+    sid:910015;
+    rev:1;
+)
+
+# Small TCP Fragment Flood
+# Flood small TCP SYN fragments
+# TEST: sudo hping3 -S -p 80 --flood --data 20 <SNORT_IP>
+alert tcp any any -> $HOME_NET any (
+    msg:"DDoS Detection: Suspicious small TCP fragment flood";
+    dsize:<50;
+    flags:S;
+    classtype:attempted-recon;
+    sid:910016;
+    rev:1;
+)
+
+# HTTP GET Flood (Slowloris style)
+# TEST: python3 slowloris.py -s 200 -p 80 <SNORT_IP>
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Potential Slowloris HTTP GET flood - many slow partial GET requests";
+    flow:to_server, established;
+    service: http;
+    content:"GET";
+    classtype:attempted-dos;
+    metadata:service any, priority high, severity critical, category "Availability";metadata:service any, priority high, severity critical, category "Availability";
+    sid:910017;
+    rev:1;
+)
+
+
+
+
+
+

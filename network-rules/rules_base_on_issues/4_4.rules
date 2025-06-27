@@ -1,0 +1,8 @@
+alert icmp $HOME_NET any -> !$HOME_NET any (
+    msg:"Data Exfiltration via ICMP - Large Payload or High Frequency to Unauthorized External Destination"; 
+    detection_filter:track by_src, count 50, seconds 10; 
+    metadata:service icmp, attack_category data_exfiltration, mitre_attack T1048; 
+    classtype:exfiltration; 
+    priority:1; 
+    sid:44406; rev:1; 
+)

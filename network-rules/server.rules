@@ -1,0 +1,172 @@
+##########################
+### Apache HTTP Server ###
+##########################
+
+# .htaccess file exposure
+# TEST: "curl http://<SNORT_IP>/.htaccess"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Apache - Attempt to access .htaccess file";
+    flow:to_server,established;
+    service: http;
+    content:".htaccess";
+    classtype:sensitive-data-access;
+    sid:10000001;
+    rev:1;
+)
+
+# HTTP GET Request to a Suspicious URI
+# TEST: "curl http://<SNORT_IP>/admin"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"TCP - Access to /admin URI";
+    flow:to_server,established;
+    content:"/admin";
+    classtype:web-application-attack;
+    sid:10000002;
+    rev:1;
+)
+
+# Directory Traversal Attempt
+# TEST: "curl http://192.168.229.132/../../../../anything"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Apache HTTP - Directory Traversal - raw match";
+    service: http;
+    pcre:"/^(..\/)*.*/";
+    sid:10000003;
+    rev:1;
+)
+
+# HTTP Basic Authentication Usage
+# TEST: "curl -u user:pass http://<SNORT_IP>/"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"HTTP Basic Auth detected";
+    flow:to_server,established;
+    content:"Authorization: Basic ";
+    classtype:policy-violation;
+    sid:10000004; rev:1;
+)
+
+# HTTP POST to Shell Upload Locations
+# TEST: "curl -X POST http://<SNORT_IP>/upload.php -d 'foo=bar'"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Potential web shell upload via POST";
+    service: http;
+    content:"POST";
+    content:".php";
+    classtype:web-application-attack;
+    sid:10000005; rev:1;
+)
+
+############################
+### Apache TOMCAT Server ###
+############################
+
+# Apache Tomcat HTTP Request to .jsp files
+# TEST: "curl -X POST http://<SNORT_IP>/test.jsp -d 'foo=bar'"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"JSP file access - Tomcat detection";
+    flow:to_server,established;
+    service: http;
+    content:".jsp";
+    classtype:web-application-activity;
+    sid:10000006; rev:1;
+)
+
+# Apache Tomcat Manager Login Attempt
+# TEST: "curl http://<SNORT_IP>/manager/html
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Tomcat Manager Login Attempt";
+    flow:to_server,established;
+    service: http;
+    content:"/manager/html";
+    classtype:web-application-attack;
+    sid:10000007; rev:1;
+)
+
+# AJP Ghostcat CVE-2020-1938 exploit attempt (basic signature)
+# TEST: "printf "\x12\x34\x02\x0A" | nc <SNORT_IP> 8009"
+alert tcp any any -> $HOME_NET 8009 (
+    msg:"Tomcat - Possible Ghostcat AJP file inclusion attempt (CVE-2020-1938) - Pattern 1";
+    flow:to_server,established;
+    content:"|12 34 02 0A|";
+    classtype:attempted-admin;
+    sid:10000008;
+    rev:1;
+)
+
+# AJP Ghostcat CVE-2020-1938 exploit attempt (basic signature)
+# TEST: "printf "\x0A\x0B" | nc <SNORT_IP> 8009"
+alert tcp any any -> $HOME_NET 8009 (
+    msg:"Tomcat - Possible Ghostcat AJP file inclusion attempt (CVE-2020-1938) - Pattern 2";
+    flow:to_server,established;
+    content:"|0A 0B|";
+    classtype:attempted-admin;
+    sid:10000009;
+    rev:1;
+)
+
+####################
+### NGINX Server ###
+####################
+# URI Smuggling with Double Slashes (GET //admin, GET ///api, etc)
+# TEST: "curl http://<SNORT_IP>////etc/passwd"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Nginx - Possible URI smuggling with double slashes";
+    flow:to_server,established;
+    service: http;
+    content:"//";
+    pcre:"/\/\/+/";
+    classtype:web-application-attack;
+    sid:1000010;
+    rev:1;
+)
+
+# Attempt to bypass Nginx rules using encoded slash
+# TEST: "curl http://<SNORT_IP>////etc%2Fpasswd"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Nginx - Encoded slash (%2F) possibly used to bypass rules";
+    flow:to_server,established;
+    service: http;
+    content:"%2F";
+    classtype:web-application-attack;
+    sid:1000011;
+    rev:1;
+)
+
+# Attempt to access Status Page
+# TEST: "curl http://<SNORT_IP>/nginx_status"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Nginx - Possible Status Page Access Attempt";
+    service:http;
+    content:"/nginx_status";
+    sid:1000012;
+    rev:1;
+)
+
+# Access to web.xml file
+# TEST: "curl http://<SNORT_IP>/WEB-INF/web.xml"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Tomcat - Attempt to access web.xml configuration file";
+    flow:to_server,established;
+    service: http;
+    content:"/WEB-INF/web.xml";
+    classtype:sensitive-data-access;
+    sid:1000013;
+    rev:1;
+)
+
+###############
+### VARIOUS ###
+###############
+
+# HTTP User-Agent with Suspicious Scanner
+# TEST: "curl -A "Nikto/2.1.6" http://<SNORT_IP>/"
+# TEST: "curl -H "User-Agent: Nikto" http://<SNORT_IP>/"
+alert tcp any any -> $HOME_NET 80 (
+    msg:"Suspicious User-Agent - Nikto Scanner";
+    flow:to_server,established;
+    service: http;
+    content:"User-Agent|3a| Nikto";
+    classtype:attempted-recon;
+    sid:100000014;
+    rev:1;
+)
