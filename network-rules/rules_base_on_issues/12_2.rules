@@ -9,22 +9,15 @@
 #    sid:122001; rev:1;
 #)
 
-# Moderate data transfer (>10MB)
-# TEST:
-#      external 
-#        - nc -l -p <port> > output.bin
-#      snort-vm:
-#       dd if=/dev/zero bs=30M count=1 | nc <Server_IP> <port>
+# New 12.2 rules
+# 
+# TEST external 
+#       nc -l -p 12345 > output.bin
+#      In VM run:
+#       dd if=/dev/zero bs=30M count=1 | nc 12345
 #
-#alert tcp $EXTERNAL_NET any -> $HOME_NET any (
-#    msg:"[T1] Moderate data transfer (>10MB) from external host";
-#    flow:established;
-#    stream_size:>10000000, to_server;
-#    metadata: attack_category data_exfiltration;
-#    priority:3;
-#    sid:122101; rev:1;
-#)
 
+# Moderate data transfer (>10MB)
 alert tcp $EXTERNAL_NET any -> $HOME_NET any (
     msg:"[T1] Moderate data transfer (>10MB) from external host";
     flow:established;
@@ -35,12 +28,6 @@ alert tcp $EXTERNAL_NET any -> $HOME_NET any (
 )
 
 # Large data transfer (>100MB)
-# TEST:
-#      external 
-#        - nc -l -p <port> > output.bin
-#      snort-vm:
-#       dd if=/dev/zero bs=30M count=3 | nc <Server_IP> <port>
-#
 alert tcp $EXTERNAL_NET any -> $HOME_NET any (
     msg:"[T2] Large data transfer (>100MB) from external host";
     flow:established;
@@ -51,12 +38,6 @@ alert tcp $EXTERNAL_NET any -> $HOME_NET any (
 )
 
 # Massive data transfer (>1GB)
-# TEST:
-#      external 
-#        - nc -l -p <port> > output.bin
-#      snort-vm:
-#       dd if=/dev/zero bs=30M count=34 | nc <Server_IP> <port>
-#
 alert tcp $EXTERNAL_NET any -> $HOME_NET any (
     msg:"[T3] Massive data transfer (>1GB) from external host";
     flow:established;

@@ -10,7 +10,6 @@ services:
       # - ./snort.lua:/usr/local/snort/etc/snort/snort.lua:ro
       # - ./openappid:/usr/local/snort/etc/snort/appid:ro
       - ./snort_defaults.lua:/usr/local/snort/etc/snort/snort_defaults.lua:ro
-      - ./detectors:/usr/local/snort/etc/snort/appid/odp/lua:ro
     command:
       - "-c"
       - "snort.lua"

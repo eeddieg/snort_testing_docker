@@ -101,7 +101,7 @@ def setup_openappid():
 
   deleteTempFolder(tmpdir)
 
-  print(f"{Colors.greenBold}[+]{Colors.reset} OpenAppID detectors installed in: {Colors.yellowBold}{INSTALL_DIR}{Colors.reset}\n")
+  print(f"{Colors.greenBold}[+]{Colors.reset} OpenAppID detectors installed in: {Colors.yellowBold}{INSTALL_DIR}{Colors.reset}")
 
 if __name__ == "__main__":
   try:
