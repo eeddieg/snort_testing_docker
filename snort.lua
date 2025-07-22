@@ -21,10 +21,13 @@
 
 -- HOME_NET and EXTERNAL_NET must be set now
 -- setup the network addresses you are protecting
-HOME_NET = '192.168.229.0/24'
-EXTERNAL_NET = '!$HOME_NET'
+HOME_NET = '192.168.229.132/24'
+EXTERNAL_NET = '192.168.229.129/24'
+-- EXTERNAL_NET = '!$HOME_NET'
 
 include 'snort_defaults.lua'
+-- include '/snort-docker/network-rules/lua/ack_flood_rule.lua'
+
 
 ---------------------------------------------------------------------------
 -- 2. configure inspection
@@ -240,36 +243,39 @@ event_filter =
 --]]
 event_filter =
 {
+    { gid = 1, sid = 401, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 40063, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+
     -- TEST ICMP rule
-    { gid = 1, sid = 1000001, type = 'limit', track = 'by_src', count = 1, seconds = 40 },
+    { gid = 1, sid = 1000001, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
     
     -- reduce the number of events logged for some rules
-    { gid = 1, sid = 122101, type = 'limit',  track = 'by_src', count = 1, seconds = 10 },
-    { gid = 1, sid = 122102, type = 'limit',  track = 'by_src', count = 1, seconds = 15 },
-    { gid = 1, sid = 122103, type = 'limit',  track = 'by_src', count = 1, seconds = 30 },
+    { gid = 1, sid = 122101, type = 'limit',  track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 122102, type = 'limit',  track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 122103, type = 'limit',  track = 'by_src', count = 1, seconds = 60 },
 
     -- Apache HTTP Server
-    { gid = 1, sid = 10000001, type = 'limit', track = 'by_src', count = 2, seconds = 60 },
-    { gid = 1, sid = 10000002, type = 'limit', track = 'by_src', count = 3, seconds = 60 },
-    { gid = 1, sid = 10000003, type = 'limit', track = 'by_src', count = 3, seconds = 120 },
-    { gid = 1, sid = 10000004, type = 'limit', track = 'by_src', count = 2, seconds = 60 },
-    { gid = 1, sid = 10000005, type = 'limit', track = 'by_src', count = 3, seconds = 60 },
+    { gid = 1, sid = 10000001, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000002, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000003, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000004, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000005, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
 
     -- Apache Tomcat Server
-    { gid = 1, sid = 10000006, type = 'limit', track = 'by_src', count = 3, seconds = 60 },
-    { gid = 1, sid = 10000007, type = 'limit', track = 'by_src', count = 2, seconds = 120 },
-    { gid = 1, sid = 10000008, type = 'limit', track = 'by_src', count = 2, seconds = 300 },
-    { gid = 1, sid = 10000009, type = 'limit', track = 'by_src', count = 2, seconds = 300 },
+    { gid = 1, sid = 10000006, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000007, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000008, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 10000009, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
 
     -- NGINX Server
-    { gid = 1, sid = 1000010,  type = 'limit', track = 'by_src', count = 3, seconds = 60 },
-    { gid = 1, sid = 1000011,  type = 'limit', track = 'by_src', count = 3, seconds = 60 },
-    { gid = 1, sid = 1000012,  type = 'limit', track = 'by_src', count = 2, seconds = 120 },
-    { gid = 1, sid = 1000013,  type = 'limit', track = 'by_src', count = 2, seconds = 120 },
+    { gid = 1, sid = 1000010,  type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 1000011,  type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 1000012,  type = 'limit', track = 'by_src', count = 1, seconds = 60 },
+    { gid = 1, sid = 1000013,  type = 'limit', track = 'by_src', count = 1, seconds = 60 },
 
     -- Misc
     -- Suspicious Scanner
-    { gid = 1, sid = 100000014, type = 'limit', track = 'by_src', count = 3, seconds = 60 },
+    { gid = 1, sid = 100000014, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
 
     -- DDoS Detection: Abnormal inbound traffic spike detected
     { gid = 1, sid = 910002, type = 'limit', track = 'by_src', count = 1, seconds = 60 },
@@ -308,62 +314,69 @@ rate_filter =
 
 -- Typical lowest rates in packets per second (pps) used
 rate_filter = {
+    { gid = 1, sid = 384, track = 'by_src', count = 15, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 401, track = 'by_src', count = 15, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 40063, track = 'by_src', count = 500, seconds = 10, new_action = 'alert', timeout = 300 },
+    
+    { gid = 1, sid = 122101, track = 'by_src', count = 15, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 122102, track = 'by_src', count = 5, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 122103, track = 'by_src', count = 1, seconds = 60, new_action = 'alert', timeout = 300 },
     -- Set detection filters for typical packet rates per 60-second window
     -- Apache HTTP Server
     { gid = 1, sid = 10000001, track = 'by_src', count = 5, seconds = 60, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 10000002, track = 'by_src', count = 10, seconds = 60, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 10000003, track = 'by_src', count = 6, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 10000002, track = 'by_src', count = 5, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 10000003, track = 'by_src', count = 5, seconds = 15, new_action = 'alert', timeout = 300 },
     { gid = 1, sid = 10000004, track = 'by_src', count = 4, seconds = 60, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 10000005, track = 'by_src', count = 6, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 10000005, track = 'by_src', count = 1, seconds = 30, new_action = 'alert', timeout = 300 },
 
     -- Apache Tomcat Server
-    { gid = 1, sid = 10000006, track = 'by_src', count = 5, seconds = 60, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 10000007, track = 'by_src', count = 3, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 10000006, track = 'by_src', count = 1, seconds = 60, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 10000007, track = 'by_src', count = 1, seconds = 60, new_action = 'alert', timeout = 300 },
     { gid = 1, sid = 10000008, track = 'by_src', count = 2, seconds = 300, new_action = 'alert', timeout = 600 },
     { gid = 1, sid = 10000009, track = 'by_src', count = 2, seconds = 300, new_action = 'alert', timeout = 600 },
 
     -- NGINX Server
-    { gid = 1, sid = 1000010,  track = 'by_src', count = 8, seconds = 60, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 1000011,  track = 'by_src', count = 8, seconds = 60, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 1000012,  track = 'by_src', count = 3, seconds = 120, new_action = 'alert', timeout = 300 },
-    { gid = 1, sid = 1000013,  track = 'by_src', count = 3, seconds = 120, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 1000010,  track = 'by_src', count = 1, seconds = 120, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 1000011,  track = 'by_src', count = 1, seconds = 120, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 1000012,  track = 'by_src', count = 1, seconds = 120, new_action = 'alert', timeout = 300 },
+    { gid = 1, sid = 1000013,  track = 'by_src', count = 1, seconds = 120, new_action = 'alert', timeout = 300 },
 
     -- Misc
     { gid = 1, sid = 100000014, track = 'by_src', count = 6, seconds = 60, new_action = 'alert', timeout = 300 },
 
     -- DDoS Detection: Abnormal inbound traffic spike detected
     -- TCP spike
-    { sid = 910002, track = "by_src", count = 1000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910002, track = "by_src", count = 500, seconds = 3, new_action = "alert", timeout = 300 },
     -- UDP flood
-    { sid = 910003, track = "by_src", count = 10000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910003, track = "by_src", count = 500, seconds = 3, new_action = "alert", timeout = 300 },
     -- DNS flood
-    { sid = 910004, track = "by_src", count = 5000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910004, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- ICMP echo flood
-    { sid = 910005, track = "by_src", count = 1000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910005, track = "by_src", count = 500, seconds = 5, new_action = "alert", timeout = 300 },
     -- SMTP flood
-    { sid = 910006, track = "by_src", count = 1000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910006, track = "by_src", count = 200, seconds = 5, new_action = "alert", timeout = 300 },
     -- SYN flood
-    { sid = 910007, track = "by_src", count = 5000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910007, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- SYN-ACK flood
-    { sid = 910008, track = "by_src", count = 5000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910008, track = "by_src", count = 500, seconds = 3, new_action = "alert", timeout = 300 },
     -- RST flood
-    { sid = 910009, track = "by_src", count = 1000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910009, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- TCP ACK flood
-    { sid = 910010, track = "by_src", count = 5000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910010, track = "by_src", count = 500, seconds = 3, new_action = "alert", timeout = 300 },
     -- ICMP unreachable/TTL-exceeded flood
-    { sid = 910011, track = "by_src", count = 1000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910011, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- NTP amplification
-    { sid = 910012, track = "by_src", count = 10000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910012, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- SSDP amplification
-    { sid = 910013, track = "by_src", count = 10000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910013, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- CHARGEN reflection
-    { sid = 910014, track = "by_src", count = 10000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910014, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- Unsolicited UDP reflection (high port)
-    { sid = 910015, track = "by_src", count = 10000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910015, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- Small TCP fragment flood
-    { sid = 910016, track = "by_src", count = 1000, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910016, track = "by_src", count = 300, seconds = 5, new_action = "alert", timeout = 300 },
     -- HTTP GET flood (Slowloris)
-    { sid = 910017, track = "by_src", count = 50, seconds = 60, new_action = "alert", timeout = 300 },
+    { gid = 1, sid = 910017, track = "by_src", count = 50, seconds = 60, new_action = "alert", timeout = 300 },
 }
 
 ---------------------------------------------------------------------------
