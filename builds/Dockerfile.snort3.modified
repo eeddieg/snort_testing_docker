@@ -51,7 +51,7 @@ RUN mkdir -p /snort-docker/logs && chmod 777 /snort-docker/logs
 # OpenAppID added
 RUN mkdir  /usr/local/snort/etc/snort/appid
 
-COPY openappid  /usr/local/snort/etc/snort/appid
+COPY openappid/  /usr/local/snort/etc/snort/appid/
 
 # CMD ["sleep", "infinity"]
 
