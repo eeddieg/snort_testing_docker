@@ -241,7 +241,7 @@ event_filter =
 event_filter =
 {
     -- TEST ICMP rule
-    { gid = 1, sid = 1000001, type = 'limit', track = 'by_src', count = 1, seconds = 40 },
+    { gid = 1, sid = 1000001, type = 'limit', track = 'by_dst', count = 1, seconds = 40 },
     
     -- reduce the number of events logged for some rules
     { gid = 1, sid = 122101, type = 'limit',  track = 'by_src', count = 1, seconds = 10 },
